@@ -48,11 +48,13 @@ public:
     vector<Position> house;
 
     Position nearhouse;
+    Position nearwater;
     Position now;
+
+    map<int, vector<Position>> water_to_house;
 
     Optimizer()
     {
-        Position nearhouse = {0, 0};
         P = 100;
         input();
     };
@@ -68,7 +70,7 @@ public:
             water.push_back(Position{a, b});
         }
 
-        for (int i = 0; i < W; i++)
+        for (int i = 0; i < K; i++)
         {
             int c, d;
             cin >> c >> d;
@@ -86,16 +88,43 @@ public:
         now = a;
     }
 
-    void search_nearhouse(Position w)
+    int search_nearhouse(int x)
     {
         ll dist = INF;
+        int res = 0;
 
-        for (auto &&i : house)
+        for (int i = 0; i < water.size(); i++)
         {
-            if (chmin(dist, calc_manhattan_dist(w, i)))
+            if (chmin(dist, calc_manhattan_dist(water[x], house[i])))
             {
-                nearhouse = i;
+                res = x;
             }
+        }
+
+        return res;
+    }
+
+    int search_nearwater(int x)
+    {
+        ll dist = INF;
+        int res = 0;
+
+        for (int i = 0; i < water.size(); i++)
+        {
+            if (chmin(dist, calc_manhattan_dist(house[x], water[i])))
+            {
+                res = x;
+            }
+        }
+
+        return res;
+    }
+
+    void set_water_to_house()
+    {
+        for (int i = 0; i < K; i++)
+        {
+            water_to_house[search_nearwater(i)].push_back(house[i]);
         }
     }
 
@@ -127,41 +156,51 @@ int main(void)
     start = chrono::system_clock::now();
 
     Optimizer opt;
+    opt.set_water_to_house();
 
     for (int i = 0; i < opt.water.size(); i++)
     {
         opt.now = opt.water[i];
-        opt.search_nearhouse(opt.water[i]);
-        while (true)
+        for (auto &&j : opt.water_to_house[i])
         {
+            opt.nearhouse = j;
             while (true)
             {
-                opt.excavation();
-
-                int r;
-                cin >> r;
-
-                if (r == 2 || r == -1)
+                while (true)
                 {
-                    return 0;
+                    opt.excavation();
+
+                    int r;
+                    cin >> r;
+
+                    if (r == 2 || r == -1)
+                    {
+                        return 0;
+                    }
+                    else if (r == 1)
+                    {
+                        break;
+                    }
+
+                    end = chrono::system_clock::now();
+                    if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
+                    {
+                        return 0;
+                    }
                 }
-                else if (r == 1)
+
+                if (opt.now == opt.nearhouse)
                 {
                     break;
                 }
+
+                opt.move();
 
                 end = chrono::system_clock::now();
                 if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
                 {
                     return 0;
                 }
-            }
-            opt.move();
-
-            end = chrono::system_clock::now();
-            if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
-            {
-                return 0;
             }
         }
     }
