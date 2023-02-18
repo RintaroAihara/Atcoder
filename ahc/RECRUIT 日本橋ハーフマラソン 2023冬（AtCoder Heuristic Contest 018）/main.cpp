@@ -47,11 +47,11 @@ public:
     vector<Position> water;
     vector<Position> house;
 
-    Position nearhouse;
-    Position nearwater;
     Position now;
 
     map<int, vector<Position>> water_to_house;
+
+    chrono::system_clock::time_point start, end;
 
     Optimizer()
     {
@@ -128,15 +128,15 @@ public:
         }
     }
 
-    void move()
+    void move(Position goal)
     {
-        if (abs(nearhouse.x - now.x) > 0)
+        if (abs(goal.x - now.x) > 0)
         {
-            now.x += (nearhouse.x - now.x) / abs(nearhouse.x - now.x);
+            now.x += (goal.x - now.x) / abs(goal.x - now.x);
         }
-        else if (abs(nearhouse.y - now.y) > 0)
+        else if (abs(goal.y - now.y) > 0)
         {
-            now.y += (nearhouse.y - now.y) / abs(nearhouse.y - now.y);
+            now.y += (goal.y - now.y) / abs(goal.y - now.y);
         }
         else
         {
@@ -161,9 +161,8 @@ int main(void)
     for (int i = 0; i < opt.water.size(); i++)
     {
         opt.now = opt.water[i];
-        for (auto &&j : opt.water_to_house[i])
+        for (auto &goal : opt.water_to_house[i])
         {
-            opt.nearhouse = j;
             while (true)
             {
                 while (true)
@@ -189,12 +188,12 @@ int main(void)
                     }
                 }
 
-                if (opt.now == opt.nearhouse)
+                if (opt.now == goal)
                 {
                     break;
                 }
 
-                opt.move();
+                opt.move(goal);
 
                 end = chrono::system_clock::now();
                 if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
