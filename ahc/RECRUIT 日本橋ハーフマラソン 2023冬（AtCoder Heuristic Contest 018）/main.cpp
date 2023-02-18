@@ -31,7 +31,8 @@ bool chmin(T &a, const T &b)
 class Position
 {
 public:
-    ll x, y;
+    ll x;
+    ll y;
 
     bool operator==(Position a)
     {
@@ -203,54 +204,53 @@ int main(void)
     Optimizer opt;
     opt.set_water_to_house();
 
-    for (int i = 0; i < opt.water.size(); i++)
+    for (int i = 0; i < opt.house.size(); i++)
     {
-        for (auto &goal : opt.water_to_house[i])
+        opt.now = opt.water[opt.search_nearwater(i)];
+        Position goal = opt.house[i];
+        while (true)
         {
-            opt.now = opt.water[i];
             while (true)
             {
-                while (true)
-                {
-                    if (opt.field[opt.now.x][opt.now.y])
-                    {
-                        break;
-                    }
-
-                    opt.excavation();
-
-                    int r;
-                    cin >> r;
-
-                    if (r == 2 || r == -1)
-                    {
-                        return 0;
-                    }
-                    else if (r == 1)
-                    {
-                        opt.field[opt.now.x][opt.now.y] = true;
-                        break;
-                    }
-
-                    end = chrono::system_clock::now();
-                    if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
-                    {
-                        return 0;
-                    }
-                }
-
-                if (opt.now == goal)
+                if (opt.field[opt.now.x][opt.now.y])
                 {
                     break;
                 }
 
-                opt.move(goal);
+                opt.excavation();
+
+                int r;
+                cin >> r;
+
+                if (r == 2 || r == -1)
+                {
+                    return 0;
+                }
+                else if (r == 1)
+                {
+                    opt.field[opt.now.x][opt.now.y] = true;
+                    break;
+                }
 
                 end = chrono::system_clock::now();
                 if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
                 {
                     return 0;
                 }
+            }
+
+            if (opt.now == goal)
+            {
+                opt.update_water();
+                break;
+            }
+
+            opt.move(goal);
+
+            end = chrono::system_clock::now();
+            if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
+            {
+                return 0;
             }
         }
     }
