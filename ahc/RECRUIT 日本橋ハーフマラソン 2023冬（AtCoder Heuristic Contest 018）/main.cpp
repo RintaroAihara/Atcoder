@@ -52,13 +52,24 @@ public:
     Position now;
 
     map<int, vector<Position>> water_to_house;
+    map<int, int> plist =
+        {
+            {1, 69},
+            {2, 99},
+            {4, 138},
+            {8, 199},
+            {16, 277},
+            {32, 384},
+            {64, 555},
+            {128, 832},
+    };
 
     chrono::system_clock::time_point start, end;
 
     Optimizer()
     {
-        P = 100;
         input();
+        P = plist[C];
         field.assign(N, vector<bool>(N, false));
     };
 
@@ -96,11 +107,11 @@ public:
         ll dist = INF;
         int res = 0;
 
-        for (int i = 0; i < water.size(); i++)
+        for (int i = 0; i < house.size(); i++)
         {
             if (chmin(dist, calc_manhattan_dist(water[x], house[i])))
             {
-                res = x;
+                res = i;
             }
         }
 
@@ -116,7 +127,7 @@ public:
         {
             if (chmin(dist, calc_manhattan_dist(house[x], water[i])))
             {
-                res = x;
+                res = i;
             }
         }
 
