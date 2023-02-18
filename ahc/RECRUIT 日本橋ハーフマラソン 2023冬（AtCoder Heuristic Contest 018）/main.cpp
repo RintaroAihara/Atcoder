@@ -38,6 +38,21 @@ public:
     {
         return (x == a.x) && (y == a.y);
     }
+
+    Position operator+(Position a)
+    {
+        return Position{x + a.x, y + a.y};
+    }
+
+    Position operator-(Position a)
+    {
+        return Position{x - a.x, y - a.y};
+    }
+
+    Position operator*(ll a)
+    {
+        return Position{x * a, y * a};
+    }
 };
 
 class Optimizer
@@ -47,11 +62,14 @@ public:
 
     vector<Position> water;
     vector<Position> house;
-    vector<vector<bool>> field, searched;
+    vector<vector<bool>> field, searched, is_water;
+    vector<vector<int>> sturdiness;
 
     Position now;
+    Position now_vector;
 
-    map<int, vector<Position>> water_to_house;
+    int pred_s = 0;
+
     map<int, int> plist =
         {
             {1, 69},
@@ -70,18 +88,22 @@ public:
     {
         input();
         P = plist[C];
-        field.assign(N, vector<bool>(N, false));
+        now_vector = {0, 0};
     };
 
     void input()
     {
         cin >> N >> W >> K >> C;
+        field.assign(N, vector<bool>(N, false));
+        is_water.assign(N, vector<bool>(N, false));
+        sturdiness.assign(N, vector<int>(N, 0));
 
         for (int i = 0; i < W; i++)
         {
             int a, b;
             cin >> a >> b;
             water.push_back(Position{a, b});
+            is_water[a][b] = true;
         }
 
         for (int i = 0; i < K; i++)
@@ -89,6 +111,18 @@ public:
             int c, d;
             cin >> c >> d;
             house.push_back(Position{c, d});
+        }
+    }
+
+    bool is_region(Position p)
+    {
+        if (p.x >= 0 && p.y >= 0 && p.x < N && p.y < N)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -134,12 +168,20 @@ public:
         return res;
     }
 
-    void set_water_to_house()
+    int search_next_house()
     {
-        for (int i = 0; i < K; i++)
+        priority_queue<pair<ll, ll>, vector<pair<ll, ll>>, greater<pair<ll, ll>>> q;
+        for (int i = 0; i < house.size(); i++)
         {
-            water_to_house[search_nearwater(i)].push_back(house[i]);
+            if (!is_water[house[i].x][house[i].y])
+            {
+                // 家iから最も近い水源の距離
+                ll d = calc_manhattan_dist(house[i], water[search_nearwater(i)]);
+                q.push({d, i});
+            }
         }
+
+        return q.top().second;
     }
 
     void update_water()
@@ -179,9 +221,43 @@ public:
                 if (field[nx][ny])
                 {
                     water.push_back(Position{nx, ny});
+                    is_water[nx][ny] = true;
                     q.push(Position{nx, ny});
                 }
             }
+        }
+    }
+
+    bool predict_sturdiness()
+    {
+        // 岩盤の頑丈さを予測
+        int prev, prev2;
+        if (is_region(now - now_vector))
+        {
+            prev = sturdiness[now.x - now_vector.x][now.y - now_vector.y];
+        }
+        else
+        {
+            return false;
+        }
+
+        if (is_region(now - now_vector * 2))
+        {
+            prev2 = sturdiness[now.x - now_vector.x * 2][now.y - now_vector.y * 2];
+        }
+        else
+        {
+            return false;
+        }
+
+        if (prev > 0 && prev2 > 0)
+        {
+            pred_s = prev + (prev - prev2);
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -190,10 +266,12 @@ public:
         if (abs(goal.x - now.x) > 0)
         {
             now.x += (goal.x - now.x) / abs(goal.x - now.x);
+            now_vector = {(goal.x - now.x) / abs(goal.x - now.x), 0};
         }
         else if (abs(goal.y - now.y) > 0)
         {
             now.y += (goal.y - now.y) / abs(goal.y - now.y);
+            now_vector = {0, (goal.y - now.y) / abs(goal.y - now.y)};
         }
         else
         {
@@ -205,6 +283,12 @@ public:
     {
         cout << now.x << " " << now.y << " " << P << endl;
     }
+
+    void step()
+    {
+        update_water();
+        P = plist[C];
+    }
 };
 
 int main(void)
@@ -213,10 +297,9 @@ int main(void)
     start = chrono::system_clock::now();
 
     Optimizer opt;
-    opt.set_water_to_house();
-
-    for (int i = 0; i < opt.house.size(); i++)
+    while (true)
     {
+        int i = opt.search_next_house();
         opt.now = opt.water[opt.search_nearwater(i)];
         Position goal = opt.house[i];
         while (true)
@@ -252,7 +335,7 @@ int main(void)
 
             if (opt.now == goal)
             {
-                opt.update_water();
+                opt.step();
                 break;
             }
 
