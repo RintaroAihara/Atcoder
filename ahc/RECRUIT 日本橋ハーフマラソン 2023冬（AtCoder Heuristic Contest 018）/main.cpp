@@ -46,6 +46,7 @@ public:
 
     vector<Position> water;
     vector<Position> house;
+    vector<vector<bool>> field, searched;
 
     Position now;
 
@@ -57,6 +58,7 @@ public:
     {
         P = 100;
         input();
+        field.assign(N, vector<bool>(N, false));
     };
 
     void input()
@@ -128,6 +130,49 @@ public:
         }
     }
 
+    void update_water()
+    {
+        queue<Position> q;
+        searched.assign(N, vector<bool>(N, false));
+
+        for (auto &&i : water)
+        {
+            q.push(i);
+        }
+
+        int dx[4] = {-1, 0, 1, 0};
+        int dy[4] = {0, -1, 0, 1};
+
+        while (q.size())
+        {
+            Position p = q.front();
+            q.pop();
+            searched[p.x][p.y] = true;
+
+            for (int i = 0; i < 4; i++)
+            {
+                int nx = p.x + dx[i];
+                int ny = p.y + dy[i];
+
+                if (nx < 0 || ny < 0 || nx >= N || ny >= N)
+                {
+                    continue;
+                }
+
+                if (searched[nx][ny])
+                {
+                    continue;
+                }
+
+                if (field[nx][ny])
+                {
+                    water.push_back(Position{nx, ny});
+                    q.push(Position{nx, ny});
+                }
+            }
+        }
+    }
+
     void move(Position goal)
     {
         if (abs(goal.x - now.x) > 0)
@@ -160,13 +205,18 @@ int main(void)
 
     for (int i = 0; i < opt.water.size(); i++)
     {
-        opt.now = opt.water[i];
         for (auto &goal : opt.water_to_house[i])
         {
+            opt.now = opt.water[i];
             while (true)
             {
                 while (true)
                 {
+                    if (opt.field[opt.now.x][opt.now.y])
+                    {
+                        break;
+                    }
+
                     opt.excavation();
 
                     int r;
@@ -178,6 +228,7 @@ int main(void)
                     }
                     else if (r == 1)
                     {
+                        opt.field[opt.now.x][opt.now.y] = true;
                         break;
                     }
 
