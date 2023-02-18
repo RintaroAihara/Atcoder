@@ -62,6 +62,12 @@ public:
 
     vector<Position> water;
     vector<Position> house;
+    vector<Position> v = {
+        Position{1, 0},
+        Position{-1, 0},
+        Position{0, 1},
+        Position{0, -1},
+    };
     vector<vector<bool>> field, searched, is_water;
     vector<vector<int>> sturdiness;
 
@@ -281,6 +287,7 @@ public:
 
     void excavation()
     {
+        sturdiness[now.x][now.y] += P;
         cout << now.x << " " << now.y << " " << P << endl;
     }
 
