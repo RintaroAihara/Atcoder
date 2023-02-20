@@ -252,7 +252,7 @@ public:
 
         // return exp((now_score - next_score) / T) >= random_dist(engine);
 
-        return exp((100 - next_score) / 1000) >= random_dist(engine);
+        return exp((500 - next_score) / 1000) >= random_dist(engine);
     }
 };
 
