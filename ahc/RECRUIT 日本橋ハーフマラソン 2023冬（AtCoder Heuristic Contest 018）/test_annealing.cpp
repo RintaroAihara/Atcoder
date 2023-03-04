@@ -101,6 +101,7 @@ public:
         ifs >> N >> W >> K >> C;
 
         is_excavated.resize(N, vector<int>(N));
+        house.resize(W);
         is_house.assign(N, vector<bool>(N, false));
         is_water.assign(N, vector<bool>(N, false));
 
@@ -120,7 +121,7 @@ public:
             is_water[a][b] = true;
         }
 
-        for (int i = 0; i < K; i++)
+        for (int i = W; i < W + K; i++)
         {
             int c, d;
             ifs >> c >> d;
@@ -212,6 +213,72 @@ public:
     }
 };
 
+class unionfind
+{
+private:
+    vector<long long> d;
+
+public:
+    vector<bool> is_water;
+    unionfind(){};
+
+    void init(ll w, ll k)
+    {
+        d.assign(w + k, -1);
+        is_water.assign(w + k, false);
+
+        for (int i = 0; i < w; i++)
+        {
+            is_water[i] = true;
+        }
+    }
+
+    bool same(long long x, long long y)
+    {
+        return root(x) == root(y);
+    }
+
+    long long root(long long x)
+    {
+        if (d[x] < 0)
+        {
+            return x;
+        }
+        else
+        {
+            return d[x] = root(d[x]);
+        }
+    }
+
+    bool unite(long long x, long long y)
+    {
+        x = root(x);
+        y = root(y);
+
+        if (x == y)
+        {
+            return false;
+        }
+
+        if (d[x] > d[y])
+        {
+            swap(x, y);
+        }
+
+        is_water[x] = is_water[x] | is_water[y];
+        is_water[y] = is_water[x] | is_water[y];
+
+        d[x] += d[y];
+        d[y] = x;
+        return true;
+    }
+
+    long long size(long long x)
+    {
+        return -d[root(x)];
+    }
+};
+
 class Annealing
 {
 private:
@@ -219,25 +286,31 @@ private:
     double P;
     double L;
     double T;
-    double time = 0;
+    int time;
 
 public:
-    Annealing(ll d, ll p, ll l)
+    Annealing(){};
+    Annealing(ll p, ll l)
     {
-        dist = d;
         P = p;
         L = l;
+        init();
     };
 
-    double calc_T()
+    void init()
+    {
+        time = 0;
+    }
+
+    int calc_T()
     {
         // 　低い方がより探索する
-        return (time * L / (dist * 0.5)) * P;
+        return time;
     }
 
     bool is_move(ll now_score, ll next_score)
     {
-        time += L;
+        time += 1;
         T = calc_T();
         // printf("%.10lf\n", T);
         // if (500 > next_score)
@@ -252,7 +325,7 @@ public:
 
         // return exp((now_score - next_score) / T) >= random_dist(engine);
 
-        return exp((500 - next_score) / 1000) >= random_dist(engine);
+        return exp((500 + T - next_score) / 1000) >= random_dist(engine);
     }
 };
 
@@ -269,10 +342,19 @@ public:
         Position{0, 1},
         Position{0, -1},
     };
+    vector<Position> pos_list;
+    vector<int> goal_list;
+    vector<vector<Position>> location_list;
+    vector<vector<Position>> start_position_list;
     vector<vector<bool>> is_excavated;
     vector<vector<bool>> searched;
     vector<vector<bool>> is_water;
     vector<vector<int>> sturdiness;
+    vector<vector<int>> field;
+
+    vector<Annealing> annealing_list;
+
+    unionfind uf;
 
     Position now;
     Position now_vector;
@@ -314,9 +396,17 @@ public:
             W = _test.W;
             K = _test.K;
             C = _test.C;
+            uf.init(W, K);
+            annealing_list.resize(W + K);
+            pos_list.resize(W + K);
+            house.resize(W);
+            goal_list.assign(W + K, -1);
+            location_list.assign(N, vector<Position>());
+            start_position_list.assign(N, vector<Position>());
             is_water.assign(N, vector<bool>(N, false));
             is_excavated.assign(N, vector<bool>(N, false));
             sturdiness.assign(N, vector<int>(N, 0));
+            field.assign(N, vector<int>(N, -1));
             water = _test.water;
             house = _test.house;
             test = _test;
@@ -325,6 +415,23 @@ public:
             {
                 is_water[i.x][i.y] = true;
             }
+
+            for (int i = 0; i < W; i++)
+            {
+                field[water[i].x][water[i].y] = i;
+                location_list[i].push_back(water[i]);
+                start_position_list[i].push_back(water[i]);
+                annealing_list[i] = Annealing(P, L);
+            }
+
+            for (int i = W; i < W + K; i++)
+            {
+                field[house[i].x][house[i].y] = i;
+                location_list[i].push_back(house[i]);
+                start_position_list[i].push_back(house[i]);
+                annealing_list[i] = Annealing(P, L);
+            }
+
             ofs.open(test.output, std::ios::out);
         }
 
@@ -336,9 +443,17 @@ public:
     {
         cin >> N >> W >> K >> C;
 
+        uf.init(W, K);
+        annealing_list.resize(W + K);
+        pos_list.resize(W + K);
+        house.resize(W);
+        goal_list.assign(W + K, -1);
+        location_list.assign(N, vector<Position>());
+        start_position_list.assign(N, vector<Position>());
         is_water.assign(N, vector<bool>(N, false));
         is_excavated.assign(N, vector<bool>(N, false));
         sturdiness.assign(N, vector<int>(N, 0));
+        field.assign(N, vector<int>(N, -1));
 
         for (int i = 0; i < W; i++)
         {
@@ -346,13 +461,21 @@ public:
             cin >> a >> b;
             water.push_back(Position{a, b});
             is_water[a][b] = true;
+            field[a][b] = i;
+            location_list[i].push_back(water[i]);
+            start_position_list[i].push_back(house[i]);
+            annealing_list[i] = Annealing(P, L);
         }
 
-        for (int i = 0; i < K; i++)
+        for (int i = W; i < W + K; i++)
         {
             int c, d;
             cin >> c >> d;
             house.push_back(Position{c, d});
+            field[c][d] = i;
+            location_list[i].push_back(house[i]);
+            start_position_list[i].push_back(house[i]);
+            annealing_list[i] = Annealing(P, L);
         }
     }
 
@@ -397,12 +520,13 @@ public:
                 }
                 else if (r == 1)
                 {
+                    field[water[i].x][water[i].y] = i;
                     break;
                 }
             }
         }
 
-        for (int i = 0; i < K; i++)
+        for (int i = W; i < W + K; i++)
         {
             while (true)
             {
@@ -414,6 +538,7 @@ public:
                 }
                 else if (r == 1)
                 {
+                    field[house[i].x][house[i].y] = i;
                     break;
                 }
             }
@@ -421,86 +546,145 @@ public:
 
         while (true)
         {
-            int goal_i = search_next_house();
-            start_pos = water[search_nearwater(goal_i)];
-            now = start_pos;
-
-            priority_queue<pair<ll, Position>, vector<pair<ll, Position>>, greater<pair<ll, Position>>> q;
-            q.push({calc_manhattan_dist(now, goal_pos), now});
-
-            Annealing ann(calc_manhattan_dist(now, goal_pos), P, L);
-
-            while (true)
+            for (int i = 0; i < W + K; i++)
             {
-                Position next_direction = decesion_next_direction();
-                // cout << now.x << " " << now.y << endl;
-
-                if (next_direction == Position{0, 0})
+                if (uf.is_water[i] && goal_list[i] == -1)
                 {
-                    while (q.size())
-                    {
-                        now = q.top().second;
-                        q.pop();
-                        next_direction = decesion_next_direction();
+                    continue;
+                }
 
-                        if (next_direction != Position{0, 0})
-                        {
-                            break;
-                        }
-                    }
+                if (uf.root(i) != i)
+                {
+                    // 既に繋がっている
+                    continue;
                 }
                 else
                 {
-                    bool connect_flag = false;
-                    bool continue_flag = true;
-                    for (int i = 1; i <= L; i++)
+                    if (goal_list[i] == -1)
                     {
-                        Position next = now + next_direction * i;
-                        if (continue_flag)
-                        {
-                            while (true)
-                            {
-                                int r = ask(next);
+                        goal_list[i] = search_goal(i);
+                        pair<Position, Position> p;
 
-                                if (r == 2 || r == -1)
-                                {
-                                    return;
-                                }
-                                else if (r == 1)
-                                {
-                                    continue_flag &= ann.is_move(sturdiness[now.x][now.y], sturdiness[next.x][next.y]);
-                                    z++;
-                                    break;
-                                }
-                            }
-                        }
-                        else
+                        if (uf.is_water[goal_list[i]])
                         {
-                            sturdiness[next.x][next.y] = sturdiness[next.x - next_direction.x][next.y - next_direction.y];
+                            goal_list[goal_list[i]] = i;
+                            p = search_start_goal(goal_list[i], i);
+                            pos_list[goal_list[i]] = p.first;
                         }
 
-                        connect_flag = is_connect(next);
-
-                        if (connect_flag)
-                        {
-                            break;
-                        }
-                    }
-
-                    if (connect_flag)
-                    {
-                        cout << "next" << endl;
-                        update_water();
-                        break;
-                    }
-
-                    if (is_excavated[now.x + next_direction.x * L][now.y + next_direction.y * L] && ann.is_move(sturdiness[now.x][now.y], sturdiness[now.x + next_direction.x * L][now.y + next_direction.y * L]))
-                    {
-                        now = now + next_direction * L;
-                        q.push({calc_manhattan_dist(now, goal_pos), now});
+                        p = search_start_goal(i, goal_list[i]);
+                        now = p.first;
+                        goal_pos = p.second;
                     }
                     else
                     {
+                        pair<Position, Position> p;
+                        p = search_start_goal(i, goal_list[i]);
+                        now = p.first;
+                        // now = decesion_move_positon(now, annealing_list[i]);
+                        goal_pos = p.second;
+                    }
+
+                    // pair<Position, Position> p = search_start_goal(i, goal_list[i]);
+
+                    // now = pos_list[i];
+                    // goal_pos = p.second;
+
+                    priority_queue<
+                        pair<ll, Position>,
+                        vector<pair<ll, Position>>,
+                        greater<pair<ll, Position>>>
+                        q;
+                    q.push({calc_manhattan_dist(now, goal_pos), now});
+                    Position next_direction = decesion_next_direction();
+
+                    if (next_direction == Position{0, 0})
+                    {
+                        while (q.size())
+                        {
+                            now = q.top().second;
+                            q.pop();
+                            next_direction = decesion_next_direction();
+
+                            if (next_direction != Position{0, 0})
+                            {
+                                break;
+                            }
+                        }
+                        // cout << "a" << endl;
+                    }
+                    else
+                    {
+                        bool connect_flag = false;
+                        bool continue_flag = true;
+
+                        for (int j = 1; j <= L; j++)
+                        {
+                            Position next = now + next_direction * j;
+                            if (continue_flag)
+                            {
+                                while (true)
+                                {
+                                    int r = ask(next);
+
+                                    if (r == 2 || r == -1)
+                                    {
+                                        return;
+                                    }
+                                    else if (r == 1)
+                                    {
+                                        field[next.x][next.y] = i;
+                                        location_list[i].push_back(next);
+                                        continue_flag &= annealing_list[i].is_move(sturdiness[now.x][now.y], sturdiness[next.x][next.y]);
+                                        z++;
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                sturdiness[next.x][next.y] = sturdiness[next.x - next_direction.x][next.y - next_direction.y];
+                            }
+
+                            connect_flag = is_connect(next, i);
+
+                            if (connect_flag)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (connect_flag)
+                        {
+                            cout << "next" << endl;
+                            // update_water();
+                            break;
+                        }
+
+                        for (int j = L; j <= L; j++)
+                        {
+                            Position next = now + next_direction * j;
+                            if (is_excavated[next.x][next.y] &&
+                                annealing_list[i].is_move(sturdiness[now.x][now.y], sturdiness[next.x][next.y]))
+                            {
+                                now = next;
+                                pos_list[i] = now;
+                                start_position_list[i].push_back(now);
+                                q.push({calc_manhattan_dist(now, goal_pos), now});
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    end = chrono::system_clock::now();
+                    if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
+                    {
+                        cout << z << endl;
+
+                        return;
                     }
                 }
 
@@ -511,12 +695,6 @@ public:
 
                     return;
                 }
-            }
-
-            end = chrono::system_clock::now();
-            if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)
-            {
-                return;
             }
         }
     }
@@ -533,10 +711,28 @@ public:
         }
     }
 
-    bool is_connect(Position p)
+    bool is_connect(Position p, int index)
     {
         bool flag = false;
-        flag = (p == goal_pos);
+        int root;
+        int child;
+        if (field[p.x][p.y] != -1)
+        {
+            flag = uf.unite(field[p.x][p.y], index);
+            if (flag)
+            {
+                root = uf.root(index);
+                if (field[p.x][p.y] == root)
+                {
+                    child = index;
+                }
+                else
+                {
+                    child = field[p.x][p.y];
+                }
+            }
+        }
+
         for (int j = 0; j < v.size(); j++)
         {
             if (!is_region(p + v[j]))
@@ -544,11 +740,47 @@ public:
                 continue;
             }
 
-            flag = (p + v[j] == goal_pos);
             if (flag)
             {
                 break;
             }
+
+            Position _p = p + v[j];
+            if (field[_p.x][_p.y] != -1)
+            {
+                flag = uf.unite(field[_p.x][_p.y], index);
+                if (flag)
+                {
+                    cout << field[_p.x][_p.y] << " " << index << endl;
+                    root = uf.root(index);
+                    if (field[_p.x][_p.y] == root)
+                    {
+                        child = index;
+                    }
+                    else
+                    {
+                        child = field[_p.x][_p.y];
+                    }
+                }
+            }
+        }
+
+        if (flag)
+        {
+
+            cout << start_position_list[root].size() << endl;
+
+            location_list[root].insert(
+                location_list[root].end(),
+                location_list[child].begin(),
+                location_list[child].end());
+            start_position_list[root].insert(
+                start_position_list[root].end(),
+                start_position_list[child].begin(),
+                start_position_list[child].end());
+            cout << start_position_list[root].size() << endl;
+
+            goal_list[root] = -1;
         }
 
         return flag;
@@ -566,14 +798,40 @@ public:
         return abs(a.x - b.x) + abs(a.y - b.y);
     }
 
-    int search_nearhouse(int x)
+    ll calc_dist(int a, int b)
+    {
+        ll dist = INF;
+        for (auto &&i : start_position_list[a])
+        {
+            for (auto &&j : location_list[b])
+            {
+                if (chmin(dist, calc_manhattan_dist(i, j)))
+                {
+                }
+            }
+        }
+
+        return dist;
+    }
+
+    int search_house(int x)
     {
         ll dist = INF;
         int res = 0;
 
-        for (int i = 0; i < house.size(); i++)
+        for (int i = W; i < W + K; i++)
         {
-            if (chmin(dist, calc_manhattan_dist(water[x], house[i])))
+            if (uf.same(x, i))
+            {
+                continue;
+            }
+
+            if (uf.root(i) != i)
+            {
+                continue;
+            }
+
+            if (chmin(dist, calc_dist(x, i)))
             {
                 res = i;
             }
@@ -582,14 +840,55 @@ public:
         return res;
     }
 
-    int search_nearwater(int x)
+    int search_house_from_house(int x)
+    {
+        ll dist = INF;
+        int res = 0;
+
+        for (int i = W; i < W + K; i++)
+        {
+            if (i == x)
+            {
+                continue;
+            }
+
+            if (uf.same(x, i))
+            {
+                continue;
+            }
+
+            if (uf.root(i) != i)
+            {
+                continue;
+            }
+
+            if (chmin(dist, calc_dist(x, i)))
+            {
+                res = i;
+            }
+        }
+
+        return res;
+    }
+
+    int search_water(int x)
     {
         ll dist = INF;
         int res = 0;
 
         for (int i = 0; i < water.size(); i++)
         {
-            if (chmin(dist, calc_manhattan_dist(house[x], water[i])))
+            if (uf.same(x, i))
+            {
+                continue;
+            }
+
+            if (uf.root(i) != i)
+            {
+                continue;
+            }
+
+            if (chmin(dist, calc_dist(x, i)))
             {
                 res = i;
             }
@@ -601,12 +900,12 @@ public:
     int search_next_house()
     {
         priority_queue<pair<ll, ll>, vector<pair<ll, ll>>, greater<pair<ll, ll>>> q;
-        for (int i = 0; i < house.size(); i++)
+        for (int i = W; i < W + K; i++)
         {
             if (!is_water[house[i].x][house[i].y])
             {
                 // 家iから最も近い水源の距離
-                ll d = calc_manhattan_dist(house[i], water[search_nearwater(i)]);
+                ll d = calc_manhattan_dist(house[i], water[search_water(i)]);
                 q.push({d, i});
             }
         }
@@ -614,6 +913,51 @@ public:
         goal_pos = house[q.top().second];
 
         return q.top().second;
+    }
+
+    int search_goal(int index)
+    {
+        int res;
+        if (index < W)
+        {
+            // 水源indexから最も近い家を返す
+            res = search_house(index);
+        }
+        else
+        {
+            // 家indexから最も近い家または水源を返す
+            int w = search_water(index);
+            int h = search_house_from_house(index);
+            if (calc_dist(index, w) < calc_dist(index, h))
+            {
+                res = w;
+            }
+            else
+            {
+                res = h;
+            }
+        }
+
+        return res;
+    }
+
+    pair<Position, Position> search_start_goal(int start_i, int goal_i)
+    {
+        pair<Position, Position> res; // fisrtがstart,secondがgoal
+        ll dist = INF;
+        for (auto &&i : start_position_list[start_i])
+        {
+            for (auto &&j : location_list[goal_i])
+            {
+                if (chmin(dist, calc_manhattan_dist(i, j)))
+                {
+                    res.first = i;
+                    res.second = j;
+                }
+            }
+        }
+
+        return res;
     }
 
     void update_water()
@@ -706,38 +1050,51 @@ public:
         }
     }
 
-    Position decesion_move_positon()
+    Position decesion_move_positon(Position pos, Annealing annealing)
     {
-        Position direction = goal_pos - now;
-        ll bestscore = 0;
-        ll best_i = 0;
+        Position res;
+        ll dist = INF;
+        vector<vector<bool>> searched(N, vector<bool>(N, false));
 
-        vector<pair<ll, ll>> scorelist;
+        queue<Position> q;
+        q.push(pos);
 
-        for (int i = 0; i < v.size(); i++)
+        while (q.size())
         {
-            Position next = now + v[i];
-            if (!is_region(next))
+            Position p = q.front();
+            q.pop();
+            searched[p.x][p.y] = true;
+
+            if (chmin(dist, calc_manhattan_dist(p, goal_pos)))
             {
-                continue;
+                res = p;
             }
 
-            ll score = 0;
-            if (abs(v[i].x) > 0)
+            for (int i = 0; i < v.size(); i++)
             {
-                score = direction.x / v[i].x;
-            }
-            else
-            {
-                score = direction.y / v[i].y;
-            }
+                Position next = p + v[i];
+                if (!is_region(next))
+                {
+                    continue;
+                }
+                if (searched[next.x][next.y])
+                {
+                    continue;
+                }
 
-            scorelist.push_back({score, i});
+                if (sturdiness[next.x][next.y] <= 0 || !is_excavated[next.x][next.y])
+                {
+                    continue;
+                }
+
+                if (annealing.is_move(sturdiness[p.x][p.y], sturdiness[next.x][next.y]))
+                {
+                    q.push(next);
+                }
+            }
         }
 
-        sort(scorelist.begin(), scorelist.end(), greater<pair<ll, ll>>());
-
-        return now + v[scorelist[0].second];
+        return res;
     }
 
     void move(Position pos)

@@ -1,0 +1,47 @@
+inline ll mod(ll a, ll m)
+{
+    return (a % m + m) % m;
+}
+
+// ax+by=dとなるような最小のd=gcd(a,b)を出力
+ll extGCD(ll a, ll b, ll &x, ll &y)
+{
+    if (b == 0)
+    {
+        x = 1;
+        y = 0;
+        return a;
+    }
+    ll d = extGCD(b, a % b, y, x);
+    y -= a / b * x;
+
+    return d;
+}
+
+ll modinv(ll a, ll m)
+{
+    ll x, y;
+    extGCD(a, m, x, y);
+    return mod(x, m);
+}
+
+//ax+b=cy+d=z (x,y>=0)となるような最小のzを求める.
+//解が存在しない場合、-1を返す
+ll crt(ll a, ll b, ll c, ll d)
+{
+    ll g = gcd(a, c);
+    ll _a = a / g, _c = c / g;
+    ll e = (b - d);
+
+    if (e % g != 0)
+    {
+        return -1;
+    }
+
+    e /= g;
+
+    ll y = mod(e * modinv(_c, _a), _a);
+    ll z = c * y + d;
+
+    return z;
+}

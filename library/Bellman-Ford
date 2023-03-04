@@ -1,0 +1,46 @@
+struct edge
+{
+    ll from;
+    ll to;
+    ll cost;
+};
+
+int V, E, r;
+edge e[2010];
+ll d[1010];
+
+bool bf(int s)
+{
+    int i;
+    bool update = true;
+    int upcount = 0;
+
+    rep(i, 0, V)
+    {
+        d[i] = INF;
+    }
+
+    d[s] = 0;
+
+    while (update)
+    {
+        update = false;
+        upcount++;
+
+        if (upcount > V)
+        {
+            return false;
+        }
+
+        rep(i, 0, E)
+        {
+            if (d[e[i].from] != INF && d[e[i].to] > d[e[i].from] + e[i].cost)
+            {
+                d[e[i].to] = d[e[i].from] + e[i].cost;
+                update = true;
+            }
+        }
+    }
+
+    return true;
+}

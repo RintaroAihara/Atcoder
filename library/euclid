@@ -1,0 +1,25 @@
+ll gcd(ll a, ll b)
+{
+    ll tmp;
+    ll c;
+    if (a < b)
+    {
+        tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+    do
+    {
+        c = a % b;
+        a = b;
+        b = c;
+    } while (c != 0);
+
+    return a;
+}
+
+ll lcm(ll a, ll b)
+{
+    return a * b / gcd(a, b);
+}

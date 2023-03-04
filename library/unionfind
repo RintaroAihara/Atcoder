@@ -1,0 +1,50 @@
+class unionfind
+{
+private:
+    vector<long long> d;
+
+    bool same(long long x, long long y)
+    {
+        return root(x) == root(y);
+    }
+
+public:
+    unionfind(long long n) : d(n, -1) {}
+
+    long long root(long long x)
+    {
+        if (d[x] < 0)
+        {
+            return x;
+        }
+        else
+        {
+            return d[x] = root(d[x]);
+        }
+    }
+
+    bool unite(long long x, long long y)
+    {
+        x = root(x);
+        y = root(y);
+
+        if (x == y)
+        {
+            return false;
+        }
+
+        if (d[x] > d[y])
+        {
+            swap(x, y);
+        }
+
+        d[x] += d[y];
+        d[y] = x;
+        return true;
+    }
+
+    long long size(long long x)
+    {
+        return -d[root(x)];
+    }
+};

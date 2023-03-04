@@ -1,0 +1,51 @@
+int H, W; //H 高さ,W 幅
+
+char maze[20][20]; //迷路の構成
+
+int d[20][20]; //距離
+
+int bfs(P s, P g) //幅優先探索,sがスタート,gがゴール
+{
+    queue<P> q; //キュー
+    int dx[4] = {1, 0, -1, 0};
+    int dy[4] = {0, 1, 0, -1};
+    int i, j;
+    P p;
+
+    rep(i, 0, H - 1)
+    {
+        rep(j, 0, W - 1)
+        {
+            d[i][j] = MOD; //距離を無限で初期化
+        }
+    }
+
+    d[s.first][s.second] = 0; //スタート地点の距離を0で初期化
+
+    if (s == g) //スタートとゴールが同値の際終了
+    {
+        return 0;
+    }
+
+    q.push(s); //キューにスタートを挿入
+
+    while (q.size())
+    {
+        p = q.front();
+        q.pop();
+
+        rep(i, 0, 3) //近傍探索
+        {
+            int nx = p.first + dx[i];
+            int ny = p.second + dy[i];
+
+            if (nx >= 0 && ny >= 0 && nx < H && ny < W && d[nx][ny] == MOD && maze[nx][ny] == '.')
+            {
+                q.push(P(nx, ny));
+                d[nx][ny] = d[p.first][p.second] + 1;
+            }
+        }
+    }
+
+    return d[g.first][g.second];
+}

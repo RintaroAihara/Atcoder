@@ -1,0 +1,30 @@
+ll d[510][510];
+int V;
+
+bool warshalfloyd()
+{
+    int i, j, k;
+    rep(k, 0, V)
+    {
+        rep(i, 0, V)
+        {
+            rep(j, 0, V)
+            {
+                if (d[i][k] != INF && d[k][j] != INF)
+                {
+                    d[i][j] = min(d[i][j], d[i][k] + d[k][j]);
+                }
+            }
+        }
+    }
+
+    rep(i, 0, V)
+    {
+        if (d[i][i] < 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}

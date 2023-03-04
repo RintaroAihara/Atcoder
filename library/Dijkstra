@@ -1,0 +1,51 @@
+class Dijkstra
+{
+private:
+    ll n; //頂点数
+
+    struct edge
+    {
+        ll to;
+        ll cost;
+    };
+
+public:
+    vector<vector<edge>> G; //隣接リスト
+    vector<ll> distance;
+
+    Dijkstra(ll n) : n(n)
+    {
+        G.assign(n, vector<edge>());
+    }
+
+    void dijkstra(int s)
+    {
+        priority_queue<P, vector<P>, greater<P>> q;
+        distance.assign(n, INF);
+        distance[s] = 0;
+        q.emplace(0, s);
+
+        while (q.size())
+        {
+            P p = q.top();
+            q.pop();
+            int v = p.second;
+
+            if (distance[v] < p.first)
+            {
+                continue;
+            }
+
+            for (auto &x : G[v])
+            {
+                edge e = x;
+
+                if (distance[e.to] > distance[v] + e.cost)
+                {
+                    distance[e.to] = distance[v] + e.cost;
+                    q.emplace(distance[e.to], e.to);
+                }
+            }
+        }
+    }
+};

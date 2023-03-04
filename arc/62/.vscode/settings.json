@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "numeric": "cpp",
+        "forward_list": "cpp",
+        "algorithm": "cpp"
+    }
+}

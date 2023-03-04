@@ -1,0 +1,36 @@
+class factorial
+{
+private:
+    vector<ll> fac, finv, inv;
+
+public:
+    factorial(ll n) : fac(2, 1), finv(2, 1), inv(2, 1)
+    {
+        for (ll i = 2; i <= n; i++)
+        {
+            fac.push_back(fac[i - 1] * i % MOD);
+            inv.push_back(MOD - inv[MOD % i] * (MOD / i) % MOD);
+            finv.push_back(finv[i - 1] * inv[i] % MOD);
+        }
+    }
+
+    ll comb(ll n, ll k)
+    {
+        if (n < k || n < 0 || k < 0)
+        {
+            return 0;
+        }
+
+        return fac[n] * (finv[k] * finv[n - k] % MOD) % MOD;
+    }
+
+    ll perm(ll n, ll k)
+    {
+        if (n < k || n < 0 || k < 0)
+        {
+            return 0;
+        }
+
+        return fac[n] * finv[n - k] % MOD;
+    }
+};

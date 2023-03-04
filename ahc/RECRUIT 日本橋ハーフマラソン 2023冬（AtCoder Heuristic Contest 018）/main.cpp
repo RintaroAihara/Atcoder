@@ -55,6 +55,32 @@ public:
     }
 };
 
+template <class T>
+class Roullette
+{
+public:
+    vector<T> itemlist;
+    vector<int> scorelist;
+    Roullette(){
+
+    };
+
+    T choice()
+    {
+        int sum = 0;
+        for (auto &&score : scorelist)
+        {
+            sum += score;
+        }
+    }
+
+    void add(int score, T item)
+    {
+        scorelist.push_back(score);
+        itemlist.push_back(item);
+    }
+};
+
 class Optimizer
 {
 public:
@@ -68,11 +94,13 @@ public:
         Position{0, 1},
         Position{0, -1},
     };
-    vector<vector<bool>> field, searched, is_water;
+    vector<vector<bool>> is_bedrock, searched, is_water;
     vector<vector<int>> sturdiness;
 
     Position now;
     Position now_vector;
+    Position next;
+    Position goal_house;
 
     int pred_s = 0;
 
@@ -100,7 +128,7 @@ public:
     void input()
     {
         cin >> N >> W >> K >> C;
-        field.assign(N, vector<bool>(N, false));
+        is_bedrock.assign(N, vector<bool>(N, false));
         is_water.assign(N, vector<bool>(N, false));
         sturdiness.assign(N, vector<int>(N, 0));
 
@@ -187,6 +215,8 @@ public:
             }
         }
 
+        goal_house = house[q.top().second];
+
         return q.top().second;
     }
 
@@ -224,7 +254,7 @@ public:
                     continue;
                 }
 
-                if (field[nx][ny])
+                if (is_bedrock[nx][ny])
                 {
                     water.push_back(Position{nx, ny});
                     is_water[nx][ny] = true;
@@ -267,25 +297,45 @@ public:
         }
     }
 
-    void move(Position goal)
+    void move()
     {
-        if (abs(goal.x - now.x) > 0)
-        {
-            now.x += (goal.x - now.x) / abs(goal.x - now.x);
-            now_vector = {(goal.x - now.x) / abs(goal.x - now.x), 0};
-        }
-        else if (abs(goal.y - now.y) > 0)
-        {
-            now.y += (goal.y - now.y) / abs(goal.y - now.y);
-            now_vector = {0, (goal.y - now.y) / abs(goal.y - now.y)};
-        }
-        else
-        {
-            return;
-        }
+        now = next;
+    }
+
+    ll evaluate(Position next)
+    {
+        ll a = 100; // a:dの係数
+        ll b = 1;   // b:sの係数
+        ll d = calc_manhattan_dist(next, goal_house) - calc_manhattan_dist(now, goal_house);
+        ll s = sturdiness[next.x][next.y] - sturdiness[now.x][now.y];
+
+        return a * d + b * s;
     }
 
     void excavation()
+    {
+        ll score = 0;
+        ll best_i = 0;
+        for (int i = 0; i < v.size(); i++)
+        {
+            next = now + v[i];
+
+            if (is_bedrock[next.x][next.y] || !is_region(next))
+            {
+                continue;
+            }
+
+            if (chmax(score, evaluate(now + v[i])))
+            {
+                best_i = i;
+            }
+        }
+        next = now + v[best_i];
+        sturdiness[next.x][next.y] += P;
+        cout << next.x << " " << next.y << " " << P << endl;
+    }
+
+    void water_excavation()
     {
         sturdiness[now.x][now.y] += P;
         cout << now.x << " " << now.y << " " << P << endl;
@@ -308,17 +358,23 @@ int main(void)
     {
         int i = opt.search_next_house();
         opt.now = opt.water[opt.search_nearwater(i)];
-        Position goal = opt.house[i];
         while (true)
         {
             while (true)
             {
-                if (opt.field[opt.now.x][opt.now.y])
+                if (opt.is_bedrock[opt.now.x][opt.now.y])
                 {
                     break;
                 }
 
-                opt.excavation();
+                if (opt.is_water[opt.now.x][opt.now.y] && opt.is_bedrock[opt.now.x][opt.now.y])
+                {
+                    opt.water_excavation();
+                }
+                else
+                {
+                    opt.excavation();
+                }
 
                 int r;
                 cin >> r;
@@ -329,7 +385,7 @@ int main(void)
                 }
                 else if (r == 1)
                 {
-                    opt.field[opt.now.x][opt.now.y] = true;
+                    opt.is_bedrock[opt.now.x][opt.now.y] = true;
                     break;
                 }
 
@@ -340,13 +396,13 @@ int main(void)
                 }
             }
 
-            if (opt.now == goal)
+            if (opt.now == opt.goal_house)
             {
                 opt.step();
                 break;
             }
 
-            opt.move(goal);
+            opt.move();
 
             end = chrono::system_clock::now();
             if (chrono::duration_cast<chrono::milliseconds>(end - start).count() >= 4900)

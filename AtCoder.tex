@@ -1,0 +1,155 @@
+\documentclass[a4paper]{jarticle}
+\setlength{\textwidth}{170mm}       % テキストの幅
+\setlength{\textheight}{260mm}      % テキストの高さ
+\setlength{\oddsidemargin}{-5mm}    % 偶数ページの左マージン
+\setlength{\evensidemargin}{0mm}    % 奇数ページの左マージン
+\setlength{\topmargin}{-25mm}       % 上のマージン
+\usepackage{listings}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{bm}
+\usepackage{amsmath,amssymb}
+\usepackage{mathtools}
+\mathtoolsset{showonlyrefs=true}
+\usepackage{ascmac}
+\usepackage{fancybox}
+\usepackage[dvipdfmx, bookmarkstype=toc, colorlinks=false, pdfborder={0 0 0}, bookmarks=true, bookmarksnumbered=true]{hyperref}
+\usepackage{pxjahyper}
+\newcommand{\argmax}{\mathop{\rm arg~max}\limits}
+\newcommand{\argmin}{\mathop{\rm arg~min}\limits}
+\lstset{
+  basicstyle={\ttfamily},
+  identifierstyle={\small},
+  commentstyle={\smallitshape},
+  keywordstyle={\small\bfseries},
+  ndkeywordstyle={\small},
+  stringstyle={\small\ttfamily},
+  frame={tb},
+  breaklines=true,
+  columns=[l]{fullflexible},
+  numbers=left,
+  xrightmargin=0zw,
+  xleftmargin=3zw,
+  numberstyle={\scriptsize},
+  stepnumber=1,
+  numbersep=1zw,
+  lineskip=-0.5ex
+}
+
+
+\begin{document}
+\tableofcontents
+\newpage
+\hypertarget{algorithm}{\section{アルゴリズム}}
+\hypertarget{allserch}{\subsection{全探索}}
+\hypertarget{dfs}{\subsubsection{深さ優先探索}}
+ある状態からはじめ、遷移できなくなる状態まで遷移し、遷移できなくなったら1つ前の状態に戻ることを繰り返す。\\
+性質上、再帰関数で書くことが可能。DFSよりも実装が楽。
+\hypertarget{bfs}{\subsubsection{幅優先探索}}
+初めの状態から近い状態に遷移していく。\\
+最短路を求める場合はこちらを採用。
+\hypertarget{dp}{\subsection{動的計画法}}
+\hypertarget{napsack}{\subsubsection{ナップサック}}
+\[
+dp[i][j]=上からi番目の荷物を使って、重さjで価値が最大
+\]
+となるように$dp$を更新していく
+\hypertarget{digitdp}{\subsubsection{桁DP}}
+\[
+dp[i][j][k]=上からi桁目までで、条件jを満し、Nと同じか未満か(k=0:同じ,k=1:未満)
+\]
+となるように$dp$を更新していく
+\hypertarget{glaph}{\subsection{グラフ}}
+
+\hypertarget{math}{\section{数学的知識}}
+\hypertarget{felmat}{\subsection{フェルマーの小定理}}
+\hypertarget{combination}{\subsection{組み合わせ}}
+\begin{itembox}[l]{組み合わせの公式}
+\[
+{}_nC_k=\frac{n!}{k!\cdot (n-k)!}
+\]
+\end{itembox}
+
+\begin{itembox}[l]{組み合わせの和}
+\begin{align}
+\sum_{k=0}^n{}_nC_k&=2^n & \sum_{k=0}^nk\cdot{}_nC_k&=n2^{n-1}
+\end{align}
+\end{itembox}
+\newpage
+\hypertarget{abc}{\section{AtCoder Beginner Contest}}
+\hypertarget{150}{\subsection{150}}
+\hypertarget{151}{\subsection{151}}
+\hypertarget{152}{\subsection{152}}
+\hypertarget{153}{\subsection{153}}
+\hypertarget{153e}{\subsubsection{E}}
+\noindent
+\textbf{問題文}\\
+$トキはモンスターと戦っています。モンスターの体力は Hです。\\
+トキは N種類の魔法が使え、i番目の魔法を使うと、モンスターの体力を A_i減らすことができますが、トキの魔力を B_i消耗します。\\
+同じ魔法は何度でも使うことができます。魔法以外の方法でモンスターの体力を減らすことはできません。
+モンスターの体力を 0以下にすればトキの勝ちです。\\
+トキがモンスターに勝つまでに消耗する魔力の合計の最小値を求めてください。$\\\\
+\textbf{制約}\\
+$1\le H\le10^4\\
+1\le N\le10^3\\
+1\le A_i\le10^4\\
+1\le B_i\le10^4$\\
+入力中のすべての値は整数である。
+\\\\
+\textbf{方針}\\
+DPを使用する。
+
+\[
+dp[i][j]=i番目までの魔法で、体力jを減らすのに必要な最小魔力
+\]
+となるように$dp$を更新していく。
+
+
+
+\hypertarget{154}{\subsection{154}}
+\hypertarget{154e}{\subsubsection{E}}
+\noindent
+\textbf{問題文}\\
+$1以上 N以下の整数であって、 10進法で表したときに、0でない数字がちょうど K個あるようなものの個数を求めてください。$
+\\\\
+\textbf{制約}\\
+$1\le N<10^{100}\\
+1\le K\le3$
+\\\\
+\textbf{方針}\\
+桁DPを使用する。
+\[
+dp[i][j][k]=上からi桁目までで、0でない数字がj個あり、Nと同じか未満か(k=0:同じ,k=1:未満)
+\]
+となるように$dp$を更新していく
+
+\newpage
+\hypertarget{edcp}{\section{Educational DP Contest}}
+
+\newpage
+\hypertarget{tyuiten}{\section{注意点}}
+\hypertarget{order}{\subsection{計算量}}
+\noindent
+1秒あたりにできる計算量は約$10^7$くらい。\\
+これを踏まえるとNあたりにできる最大計算量は以下の表の通り。
+\begin{table}[htbp]
+\centering
+  \begin{tabular}{|c|c|}\hline
+  N&計算量\\\hline\hline
+  $10^6$	&$O(N\log N),O(N)$\\\hline
+  $10^5$&$O(N \log^2 N),O(N\log  N)$\\\hline
+  $3000$&$O(N^2)$\\\hline
+  $300$&$O(N^3)(単純な処理)$\\\hline
+  $100$&$O(N^3)$\\\hline
+  $50$&$O(N^4)$\\\hline
+  $10$&$O(N*2^N),O(2^N)$\\\hline
+  	
+  \end{tabular}
+\end{table}
+\hypertarget{mod}{\subsection{mod}}
+\noindent
+\textbf{足し算・掛け算}\\
+演算をするごとに$\bmod1\rm e9+7をする。$\\\\
+\textbf{引き算}\\
+$最後に1\rm e9+7を足した上で\bmod1\rm e9+7する。$
+
+\end{document}

@@ -1,0 +1,32 @@
+ll power(ll x, ll y)
+{
+    ll ans = 1;
+    while (y)
+    {
+        if (y & 1)
+            ans = (ans * x) % MOD;
+        x = (x * x) % MOD;
+        y >>= 1;
+    }
+    return ans;
+}
+
+ll mod_conb(ll n, ll k)
+{
+    ll ans = 1;
+
+    if (n < k || n < 0 || k < 0)
+    {
+        return 0;
+    }
+
+    for (long long i = 0; i < k; i++)
+    {
+        ans *= n - i;
+        ans %= MOD;
+        ans *= power(i + 1, MOD - 2);
+        ans %= MOD;
+    }
+
+    return ans;
+}

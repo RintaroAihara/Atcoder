@@ -1,0 +1,42 @@
+class eratosthenes_sieve
+{
+private:
+    int n;
+    vector<int> f;
+
+public:
+    vector<int> primes;
+    
+    eratosthenes_sieve(int n) : f(n + 1)
+    {
+        f[0] = f[1] = -1;
+        for (ll i = 2; i <= n; i++)
+        {
+            if (!f[i])
+            {
+                f[i] = i;
+                primes.emplace_back(i);
+                for (ll j = i * i; j <= n; j += i)
+                {
+                    if (!f[j])
+                    {
+                        f[j] = i;
+                    }
+                }
+            }
+        }
+    }
+
+    map<ll, ll> prime_factor(int x)
+    {
+        map<ll, ll> res;
+
+        while (x != 1)
+        {
+            res[f[x]]++;
+            x /= f[x];
+        }
+
+        return res;
+    }
+};
